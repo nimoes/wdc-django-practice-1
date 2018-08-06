@@ -7,8 +7,8 @@ from django.http import HttpResponse, HttpResponseBadRequest
 # Use /hello-world URL
 def hello_world(request):
     """Return a 'Hello World' string using HttpResponse"""
-    pass
-
+    return HttpResponse('Hello World')
+    
 
 # Use /date URL
 def current_date(request):
@@ -17,7 +17,7 @@ def current_date(request):
 
         i.e: 'Today is 5, January 2018'
     """
-    pass
+    return HttpResponse(datetime.strftime(datetime.now(), "Today is %d, %B %Y").replace(' 0', ' '))
 
 
 # Use URL with format /my-age/<year>/<month>/<day>
@@ -28,7 +28,13 @@ def my_age(request, year, month, day):
 
         i.e: /my-age/1992/1/20 returns 'Your age is 26 years old'
     """
-    pass
+    today = datetime.now()
+    years = today.year - year
+    months = today.month - month
+    if months < 0:
+        years -= 1
+        
+    return HttpResponse("Your age is {} years old".format(years))
 
 
 # Use URL with format /next-birthday/<birthday>
@@ -38,7 +44,16 @@ def next_birthday(request, birthday):
         based on a given string GET parameter that comes in the URL, with the
         format 'YYYY-MM-DD'
     """
-    pass
+    today = datetime.today()
+    bday = datetime.strptime(birthday, "%Y-%m-%d")
+    # if birthday month passed, move on to next year's date
+    if bday.month < today.month:
+        bday = datetime(today.year+1,bday.month,bday.day)
+    else:
+        bday = datetime(today.year, bday.month, bday.day)
+    delta = today-bday
+
+    return HttpResponse("Days until next birthday: {}".format(abs(delta.days)))
 
 
 # Use /profile URL
@@ -47,9 +62,11 @@ def profile(request):
         This view should render the template 'profile.html'. Make sure you return
         the correct context to make it work.
     """
-    pass
-
-
+    info = {
+        'my_name': 'Min Seo',
+        'my_age': 28
+    }
+    return render(request, 'profile.html', info)
 
 """
     The goal for next task is to practice routing between two URLs.
@@ -83,8 +100,11 @@ AUTHORS_INFO = {
 
 # Use provided URLs, don't change them
 def authors(request):
-    pass
+    return render(request, 'authors.html/', AUTHORS_INFO)
 
 
 def author(request, authors_last_name):
-    pass
+    if authors_last_name not in AUTHORS_INFO:
+        return HttpResponseBadRequest()
+    else:
+        return render(request, 'author.html', AUTHORS_INFO[authors_last_name])
